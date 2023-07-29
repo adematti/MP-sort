@@ -18,18 +18,18 @@ cdef extern from "mpsort.h":
 
     void mpsort_mpi_set_options(int options)
     void mpsort_mpi_unset_options(int options)
-    void mpsort_mpi_newarray(void * base, size_t nmemb, 
-            void * outbase, size_t outnmemb,
-            size_t size,
-            void (*radix)(void * ptr, void * radix, void * arg),
-            size_t rsize, 
-            void * arg, MPI.MPI_Comm comm)
+    void mpsort_mpi_newarray(void * base, size_t nmemb,
+                             void * outbase, size_t outnmemb,
+                             size_t size,
+                             void (*radix)(void * ptr, void * radix, void * arg) except *,
+                             size_t rsize,
+                             void * arg, MPI.MPI_Comm comm)
 
 # Use the Python memory allocator for large allocations.
 #
 cdef extern from "mp-mpiu.h":
-    ctypedef void * (*mpiu_malloc_func)(char * name, size_t size, char * file, int line, void * userdata)
-    ctypedef void (*mpiu_free_func)(void * ptr, const char * file, int line, void * userdata)
+    ctypedef void * (*mpiu_malloc_func)(char * name, size_t size, char * file, int line, void * userdata) except *
+    ctypedef void (*mpiu_free_func)(void * ptr, const char * file, int line, void * userdata) except *
     void MPIU_SetMalloc(mpiu_malloc_func malloc, mpiu_free_func free, void * userdata)
 
 cdef void * pymalloc(char * name, size_t size, char * file, int line, void * userdata):
@@ -204,7 +204,6 @@ def sort(numpy.ndarray data, orderby=None, numpy.ndarray out=None, comm=None, tu
         mpsort_mpi_set_options(MPSORT_REQUIRE_SPARSE_ALLTOALLV)
 
     mpsort_mpi_newarray(data.data, len(data),
-            out.data, len(out),
-            data.dtype.itemsize, radixdata.radix_func,
-            radixdata.radix_nmemb * 8, <void*>&radixdata, mpicomm)
-
+                        out.data, len(out),
+                        data.dtype.itemsize, radixdata.radix_func,
+                        radixdata.radix_nmemb * 8, <void*>&radixdata, mpicomm)
